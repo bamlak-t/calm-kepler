@@ -1161,3 +1161,85 @@ option { background: #0e1118; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 3px; }
+
+/* ---------- Rules Modal Styling ---------- */
+.rules-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid var(--border-dim);
+  padding-bottom: 8px;
+  overflow-x: auto;
+}
+
+.rules-tab-btn {
+  background: transparent;
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-sm);
+  color: var(--muted);
+  font-family: var(--font-main);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+.rules-tab-btn:hover {
+  color: var(--white);
+  border-color: var(--border-bright);
+}
+
+.rules-tab-btn.active {
+  color: var(--cyan);
+  border-color: var(--cyan);
+  background: rgba(0, 229, 255, 0.08);
+}
+
+.rules-content {
+  min-height: 240px;
+  max-height: 380px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.rules-panel {
+  display: none;
+  animation: fade-in 0.25s ease-out;
+}
+
+.rules-panel.active {
+  display: block;
+}
+
+.rules-panel h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 12px;
+}
+
+.rules-panel p {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--white);
+  margin-bottom: 12px;
+}
+
+.rules-panel ul {
+  padding-left: 20px;
+  margin-bottom: 12px;
+}
+
+.rules-panel li {
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.rules-panel strong {
+  color: var(--white);
+}
+

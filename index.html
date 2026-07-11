@@ -23,6 +23,7 @@
         <span class="logo-text">THE VAULT</span>
         <span class="logo-sub">Experimental Game Lab</span>
       </div>
+      <button class="btn btn-ghost" id="rules-trigger" style="margin-left: 20px; font-size: 0.8rem; padding: 6px 12px; border-color: rgba(0,229,255,0.3); color: var(--cyan);">📖 Rules & How to Play</button>
       <p class="header-tagline">Four games. Zero setup. Infinite permutations.</p>
     </div>
   </header>
@@ -264,6 +265,76 @@
       <h2 class="victory-title" id="victory-title">Player 1 Wins!</h2>
       <p class="victory-sub" id="victory-sub">The case is closed.</p>
       <button class="btn btn-primary" id="victory-play-again" style="--btn-accent:var(--cyan)">Play Again</button>
+    </div>
+  </div>
+
+  <!-- Rules Modal -->
+  <div class="modal-overlay" id="rules-modal" style="display:none">
+    <div class="modal-card rules-modal-card" style="--m-accent: var(--cyan); max-width: 650px;">
+      <h2>📖 Game Rules & Instructions</h2>
+      <p>Select a game below to see exactly how to play its current prototype version:</p>
+      
+      <div class="rules-tabs">
+        <button class="rules-tab-btn active" data-rules-tab="rules-general">General</button>
+        <button class="rules-tab-btn" data-rules-tab="rules-sleuths">🕵️ Sleuths</button>
+        <button class="rules-tab-btn" data-rules-tab="rules-evidence">⚖️ Evidence</button>
+        <button class="rules-tab-btn" data-rules-tab="rules-cipher">🔐 Cipher</button>
+        <button class="rules-tab-btn" data-rules-tab="rules-whispers">👤 Whispers</button>
+      </div>
+
+      <div class="rules-content">
+        <div class="rules-panel active" id="rules-general">
+          <h3>👥 2-Player Pass-and-Play (Hotseat)</h3>
+          <p>All games in this lab are built as <strong>local 2-player pass-and-play</strong> games on the same screen. To support this:</p>
+          <ul>
+            <li>When your turn ends, the screen will blank with a <strong>"Pass the Device"</strong> screen.</li>
+            <li>Hand the device/mouse to your partner before clicking <strong>"I'm Ready"</strong>. This prevents you from seeing each other's secret information!</li>
+          </ul>
+        </div>
+        <div class="rules-panel" id="rules-sleuths">
+          <h3>🕵️ Funny Sleuths</h3>
+          <p><strong>Goal:</strong> Find the coordinates of the hidden mastermind tile first.</p>
+          <ul>
+            <li>Each player gets 3 investigators. Their movements are randomized each game (e.g., Scout moves like a Knight, Analyst like a Rook).</li>
+            <li>Click your piece on your turn, then click a highlighted destination tile to move.</li>
+            <li>Stepping on a new tile reveals a clue in the log (e.g., <em>"Target row is even"</em> or <em>"Manhattan distance is 3"</em>).</li>
+            <li>Combine clues to narrow down the target tile. Click <strong>"Make Accusation"</strong>, select the target tile, and submit to check if you are right. Wrong accusation loses!</li>
+          </ul>
+        </div>
+        <div class="rules-panel" id="rules-evidence">
+          <h3>⚖️ Rules of Evidence</h3>
+          <p><strong>Goal:</strong> Match every suspect to their correct Weapon, Room, and Motive.</p>
+          <ul>
+            <li>A secret matching is generated at start.</li>
+            <li>Spend your <strong>Inquiry Points</strong> to test custom pairings (e.g., <em>"Is Beatrix related to Poison?"</em>).</li>
+            <li>Click on the grid's cells to track your deductions manually (turns cell to <strong>✓</strong>, <strong>✗</strong>, or <strong>?</strong>).</li>
+            <li>When you think you've solved it, click <strong>"Submit Solution"</strong>. Match all 3 suspects correctly to win. An incorrect solution gives the win to your opponent!</li>
+          </ul>
+        </div>
+        <div class="rules-panel" id="rules-cipher">
+          <h3>🔐 Cipher Duel</h3>
+          <p><strong>Goal:</strong> Crack your opponent's secret 4-digit code (numbers 1–9) before they crack yours.</p>
+          <ul>
+            <li><strong>Setup Phase:</strong> Each player enters a secret 4-digit code in secret.</li>
+            <li><strong>Play Phase:</strong> Take turns clicking on symbols on the 5×5 grid. Each symbol gives a mathematical constraint on the opponent's code.</li>
+            <li>Constraints accumulate in the sidebar. Revealed digits automatically show up in your slot tracker.</li>
+            <li>Click <strong>"Crack the Code"</strong>, enter your 4-digit guess, and submit to win.</li>
+          </ul>
+        </div>
+        <div class="rules-panel" id="rules-whispers">
+          <h3>👤 Whispers in the Dark</h3>
+          <p><strong>Goal:</strong> As the Fugitive, reach the 🚪 Exit node. As the Detective, catch the Fugitive.</p>
+          <ul>
+            <li><strong>Fugitive (Player 1):</strong> Moves invisibly through node connections. You leave a trail of "noise" which decays over turns.</li>
+            <li><strong>Detective (Player 2):</strong> Moves visibly. When you land on a node, you get a noise readout (Very Hot, Warm, Cool, Cold) indicating how recently the Fugitive was there.</li>
+            <li>Use the bottom action buttons to select your move each turn. Fugitive escapes to win; Detective catches Fugitive to win.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="rules-close" style="--btn-accent: var(--cyan); margin-left: auto;">Got It</button>
+      </div>
     </div>
   </div>
 

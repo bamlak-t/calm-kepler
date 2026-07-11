@@ -23,6 +23,32 @@ tabs.forEach(tab => {
   tab.addEventListener('click', () => switchTab(tab.dataset.game));
 });
 
+// ---------- Rules Modal ----------
+const rulesTrigger = document.getElementById('rules-trigger');
+const rulesModal = document.getElementById('rules-modal');
+const rulesClose = document.getElementById('rules-close');
+const rulesTabBtns = document.querySelectorAll('.rules-tab-btn');
+const rulesPanels = document.querySelectorAll('.rules-panel');
+
+rulesTrigger.addEventListener('click', () => {
+  rulesModal.style.display = 'flex';
+});
+
+rulesClose.addEventListener('click', () => {
+  rulesModal.style.display = 'none';
+});
+
+rulesTabBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    rulesTabBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const targetTabId = btn.dataset.rulesTab;
+    rulesPanels.forEach(panel => {
+      panel.classList.toggle('active', panel.id === targetTabId);
+    });
+  });
+});
+
 // ---------- Shared Utilities ----------
 export function showVictory(playerName, subMsg, onPlayAgain) {
   const overlay = document.getElementById('victory-screen');
