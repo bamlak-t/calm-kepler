@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Vault — Randomized Deduction Games</title>
+  <meta name="description" content="Four experimental two-player deduction games with randomized rules: Funny Sleuths, Rules of Evidence, Cipher Duel, and Whispers in the Dark." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="index.css" />
+</head>
+<body>
+  <!-- Background FX -->
+  <div class="bg-grid"></div>
+  <div class="scanline"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">⬡</span>
+        <span class="logo-text">THE VAULT</span>
+        <span class="logo-sub">Experimental Game Lab</span>
+      </div>
+      <p class="header-tagline">Four games. Zero setup. Infinite permutations.</p>
+    </div>
+  </header>
+
+  <!-- Tab Navigation -->
+  <nav class="game-nav" role="tablist">
+    <button class="nav-tab active" id="tab-sleuths" role="tab" aria-selected="true" aria-controls="panel-sleuths" data-game="sleuths">
+      <span class="tab-icon">🕵️</span>
+      <span class="tab-name">Funny Sleuths</span>
+      <span class="tab-accent" style="--accent: var(--cyan)"></span>
+    </button>
+    <button class="nav-tab" id="tab-evidence" role="tab" aria-selected="false" aria-controls="panel-evidence" data-game="evidence">
+      <span class="tab-icon">⚖️</span>
+      <span class="tab-name">Rules of Evidence</span>
+      <span class="tab-accent" style="--accent: var(--purple)"></span>
+    </button>
+    <button class="nav-tab" id="tab-cipher" role="tab" aria-selected="false" aria-controls="panel-cipher" data-game="cipher">
+      <span class="tab-icon">🔐</span>
+      <span class="tab-name">Cipher Duel</span>
+      <span class="tab-accent" style="--accent: var(--amber)"></span>
+    </button>
+    <button class="nav-tab" id="tab-whispers" role="tab" aria-selected="false" aria-controls="panel-whispers" data-game="whispers">
+      <span class="tab-icon">👤</span>
+      <span class="tab-name">Whispers in the Dark</span>
+      <span class="tab-accent" style="--accent: var(--emerald)"></span>
+    </button>
+  </nav>
+
+  <!-- Game Panels -->
+  <main class="game-area">
+
+    <!-- Panel 1: Funny Sleuths -->
+    <section class="game-panel active" id="panel-sleuths" role="tabpanel" aria-labelledby="tab-sleuths">
+      <div class="game-layout sleuths-layout">
+        <aside class="game-sidebar">
+          <div class="game-title-card" style="--g-accent: var(--cyan)">
+            <h1 class="game-title">Funny Sleuths</h1>
+            <p class="game-desc">Chess pieces with randomized movesets. Race your investigators to deduce the hidden Mastermind tile before your opponent does.</p>
+            <div class="move-legend" id="sleuths-legend"></div>
+          </div>
+          <div class="game-controls-card">
+            <div class="turn-indicator" id="sleuths-turn">Player 1's Turn</div>
+            <div class="phase-indicator" id="sleuths-phase">Select a piece to move</div>
+            <button class="btn btn-primary" id="sleuths-accuse" style="--btn-accent: var(--cyan)">🎯 Make Accusation</button>
+            <button class="btn btn-ghost" id="sleuths-new-game">↺ New Game</button>
+          </div>
+          <div class="clue-log" id="sleuths-clue-log">
+            <h3 class="log-title">📋 Clue Log</h3>
+            <div class="log-entries" id="sleuths-log-entries">
+              <p class="log-empty">No clues gathered yet. Move your investigators onto tiles to reveal clues.</p>
+            </div>
+          </div>
+        </aside>
+        <div class="game-board-area">
+          <div class="board-wrapper">
+            <div class="grid-board sleuths-board" id="sleuths-board"></div>
+          </div>
+          <div class="player-pieces-display">
+            <div class="pieces-row" id="sleuths-p1-pieces">
+              <span class="pieces-label" style="color:var(--cyan)">🔵 P1 Investigators</span>
+            </div>
+            <div class="pieces-row" id="sleuths-p2-pieces">
+              <span class="pieces-label" style="color:var(--amber)">🟠 P2 Investigators</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Accusation Modal -->
+      <div class="modal-overlay" id="sleuths-accuse-modal" style="display:none">
+        <div class="modal-card" style="--m-accent: var(--cyan)">
+          <h2>Make Your Accusation</h2>
+          <p>Select the tile you believe hides the Mastermind:</p>
+          <div class="accuse-grid" id="sleuths-accuse-grid"></div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" id="sleuths-confirm-accuse" style="--btn-accent: var(--cyan)">Confirm</button>
+            <button class="btn btn-ghost" id="sleuths-cancel-accuse">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 2: Rules of Evidence -->
+    <section class="game-panel" id="panel-evidence" role="tabpanel" aria-labelledby="tab-evidence">
+      <div class="game-layout evidence-layout">
+        <aside class="game-sidebar">
+          <div class="game-title-card" style="--g-accent: var(--purple)">
+            <h1 class="game-title">Rules of Evidence</h1>
+            <p class="game-desc">A logic deduction race. Spend inquiry points to query clues and solve the procedurally generated case before your opponent.</p>
+          </div>
+          <div class="game-controls-card">
+            <div class="turn-indicator" id="evidence-turn">Player 1's Turn</div>
+            <div class="points-display">
+              <div class="points-box" style="--p-color:var(--cyan)">
+                <span class="points-label">P1 Points</span>
+                <span class="points-val" id="evidence-p1-points">5</span>
+              </div>
+              <div class="points-box" style="--p-color:var(--amber)">
+                <span class="points-label">P2 Points</span>
+                <span class="points-val" id="evidence-p2-points">5</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="evidence-solve" style="--btn-accent: var(--purple)">🔍 Submit Solution</button>
+            <button class="btn btn-ghost" id="evidence-new-game">↺ New Case</button>
+          </div>
+          <div class="clue-log" id="evidence-clue-log">
+            <h3 class="log-title">📋 Evidence Board</h3>
+            <div class="log-entries" id="evidence-log-entries">
+              <p class="log-empty">Query relationships to gather evidence clues.</p>
+            </div>
+          </div>
+        </aside>
+        <div class="game-board-area evidence-board-area">
+          <div id="evidence-matrix-area"></div>
+          <div id="evidence-query-area" class="query-area"></div>
+        </div>
+      </div>
+      <div class="modal-overlay" id="evidence-solve-modal" style="display:none">
+        <div class="modal-card" style="--m-accent: var(--purple)">
+          <h2>Submit Your Solution</h2>
+          <p>Match each suspect to their weapon, room, and motive:</p>
+          <div id="evidence-solve-form"></div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" id="evidence-confirm-solve" style="--btn-accent: var(--purple)">Submit</button>
+            <button class="btn btn-ghost" id="evidence-cancel-solve">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 3: Cipher Duel -->
+    <section class="game-panel" id="panel-cipher" role="tabpanel" aria-labelledby="tab-cipher">
+      <div class="game-layout cipher-layout">
+        <aside class="game-sidebar">
+          <div class="game-title-card" style="--g-accent: var(--amber)">
+            <h1 class="game-title">Cipher Duel</h1>
+            <p class="game-desc">Each player hides a 4-digit code. Navigate the symbol grid to deduce your opponent's sequence before they crack yours.</p>
+            <div class="cipher-legend" id="cipher-legend"></div>
+          </div>
+          <div class="game-controls-card">
+            <div class="turn-indicator" id="cipher-turn">Player 1's Turn</div>
+            <div class="phase-indicator" id="cipher-phase">Choose a symbol to inspect</div>
+            <div class="code-display-area">
+              <div class="code-display" id="cipher-p1-code-display">
+                <span class="code-label" style="color:var(--cyan)">P1 Known Digits</span>
+                <div class="code-slots" id="cipher-p1-slots"></div>
+              </div>
+              <div class="code-display" id="cipher-p2-code-display">
+                <span class="code-label" style="color:var(--amber)">P2 Known Digits</span>
+                <div class="code-slots" id="cipher-p2-slots"></div>
+              </div>
+            </div>
+            <button class="btn btn-primary" id="cipher-crack" style="--btn-accent: var(--amber)">💥 Crack the Code</button>
+            <button class="btn btn-ghost" id="cipher-new-game">↺ New Duel</button>
+          </div>
+        </aside>
+        <div class="game-board-area">
+          <div class="board-wrapper">
+            <div class="grid-board cipher-board" id="cipher-board"></div>
+          </div>
+          <div class="cipher-constraints" id="cipher-constraints">
+            <h3>Discovered Constraints</h3>
+            <div id="cipher-constraint-list"></div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-overlay" id="cipher-crack-modal" style="display:none">
+        <div class="modal-card" style="--m-accent: var(--amber)">
+          <h2>Crack the Code</h2>
+          <p id="cipher-crack-prompt">Enter what you think Player 2's code is:</p>
+          <div class="crack-inputs" id="cipher-crack-inputs"></div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" id="cipher-confirm-crack" style="--btn-accent: var(--amber)">Submit</button>
+            <button class="btn btn-ghost" id="cipher-cancel-crack">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-overlay" id="cipher-setup-modal" style="display:none">
+        <div class="modal-card" style="--m-accent: var(--amber)">
+          <h2 id="cipher-setup-title">Player 1: Set Your Code</h2>
+          <p>Enter a 4-digit secret code (digits 1–9):</p>
+          <div class="crack-inputs" id="cipher-setup-inputs"></div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" id="cipher-confirm-setup" style="--btn-accent: var(--amber)">Lock It In</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel 4: Whispers in the Dark -->
+    <section class="game-panel" id="panel-whispers" role="tabpanel" aria-labelledby="tab-whispers">
+      <div class="game-layout whispers-layout">
+        <aside class="game-sidebar">
+          <div class="game-title-card" style="--g-accent: var(--emerald)">
+            <h1 class="game-title">Whispers in the Dark</h1>
+            <p class="game-desc">One player is the invisible Fugitive escaping to freedom. The other is the Detective tracking every whisper. Roles swap each round.</p>
+          </div>
+          <div class="game-controls-card">
+            <div class="turn-indicator" id="whispers-turn">Fugitive's Turn</div>
+            <div class="role-display">
+              <div class="role-badge fugitive-badge" id="whispers-fugitive-badge">🦹 Fugitive: <span id="whispers-fugitive-player">Player 1</span></div>
+              <div class="role-badge detective-badge" id="whispers-detective-badge">🕵️ Detective: <span id="whispers-detective-player">Player 2</span></div>
+            </div>
+            <div class="noise-display" id="whispers-noise-display">
+              <span class="noise-label">Noise Decay</span>
+              <div class="noise-nodes" id="whispers-noise-nodes"></div>
+            </div>
+            <button class="btn btn-ghost" id="whispers-new-game">↺ New Hunt</button>
+          </div>
+          <div class="clue-log">
+            <h3 class="log-title">📡 Detection Log</h3>
+            <div class="log-entries" id="whispers-log-entries">
+              <p class="log-empty">Detective pings will appear here.</p>
+            </div>
+          </div>
+        </aside>
+        <div class="game-board-area whispers-board-area">
+          <div class="network-board" id="whispers-network"></div>
+          <div class="whispers-actions" id="whispers-actions"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Pass-and-Play Screen -->
+  <div class="modal-overlay" id="hotseat-screen" style="display:none">
+    <div class="modal-card hotseat-card">
+      <div class="hotseat-icon">🙈</div>
+      <h2>Pass the Device</h2>
+      <p id="hotseat-msg">It's now Player 2's turn. Cover the screen and pass the device.</p>
+      <button class="btn btn-primary" id="hotseat-ready" style="--btn-accent:var(--purple)">I'm Ready — Show My Screen</button>
+    </div>
+  </div>
+
+  <!-- Victory Screen -->
+  <div class="modal-overlay" id="victory-screen" style="display:none">
+    <div class="modal-card victory-card">
+      <div class="victory-particles" id="victory-particles"></div>
+      <div class="victory-icon">🏆</div>
+      <h2 class="victory-title" id="victory-title">Player 1 Wins!</h2>
+      <p class="victory-sub" id="victory-sub">The case is closed.</p>
+      <button class="btn btn-primary" id="victory-play-again" style="--btn-accent:var(--cyan)">Play Again</button>
+    </div>
+  </div>
+
+  <script src="src/app.js" type="module"></script>
+</body>
+</html>
