@@ -303,7 +303,7 @@ export class SleuthsGame {
     this.board.innerHTML = '';
     this.board.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
 
-    const maxBoardWidth = 600;
+    const maxBoardWidth = Math.min(600, window.innerWidth - 40);
     const cellSize = Math.floor(maxBoardWidth / this.size) - 4;
 
     for (let r = 0; r < this.size; r++) {
@@ -475,11 +475,12 @@ export class SleuthsGame {
        attempts++;
     }
 
+    const tileOrigin = `${cellData.symbol || '?'} R${toR + 1},C${toC + 1}`;
     if (this.clues[this.currentPlayer].includes(clue)) {
-       this.addLog(`[${cellData.symbol || '?'}] No new clue found here.`, this.currentPlayer);
+       this.addLog(`[${tileOrigin}] No new clue found here.`, this.currentPlayer);
     } else {
        this.clues[this.currentPlayer].push(clue);
-       this.addLog(`[${cellData.symbol || '?'}] ${clue}`, this.currentPlayer);
+       this.addLog(`[${tileOrigin}] ${clue}`, this.currentPlayer);
     }
   }
 
@@ -518,14 +519,11 @@ export class SleuthsGame {
     this.selectedPiece = null;
     this.validMoves = [];
     this.phase = 'select';
+    
+    this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
     this.renderBoard();
-
-    const nextPlayer = this.currentPlayer === 1 ? 2 : 1;
-    showHotseat(`Player ${nextPlayer}'s turn is next. Pass the device, then press Ready.`, () => {
-      this.currentPlayer = nextPlayer;
-      this.renderLegend();
-      this.updateTurnUI();
-    });
+    this.renderLegend();
+    this.updateTurnUI();
   }
 
   handleAccuseClick() {

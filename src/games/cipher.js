@@ -263,19 +263,16 @@ export class CipherGame {
   }
 
   endTurn() {
-    const next = this.currentPlayer === 1 ? 2 : 1;
-    showHotseat(`Player ${next}'s turn. Pass the device, then press Ready.`, () => {
-      this.currentPlayer = next;
-      this.hasInspectedThisTurn = false;
-      this.updateUI();
-      
-      // Re-render constraints for the new player
-      this.constraintList.innerHTML = '';
-      this.constraints[next].forEach(text => {
-        this.addConstraintChip(text);
-      });
-      this.renderSlots();
+    this.currentPlayer = this.currentPlayer === 1 ? 2 : 1;
+    this.hasInspectedThisTurn = false;
+    this.updateUI();
+    
+    // Re-render constraints for the new player
+    this.constraintList.innerHTML = '';
+    this.constraints[this.currentPlayer].forEach(text => {
+      this.addConstraintChip(text);
     });
+    this.renderSlots();
   }
 
   openCrackModal() {

@@ -243,6 +243,9 @@ input:checked + .slider:before {
   .game-layout {
     grid-template-columns: 1fr;
   }
+  .game-board-area {
+    order: -1;
+  }
 }
 
 .move-legend {
@@ -580,13 +583,16 @@ input:checked + .slider:before {
 /* Cipher Board */
 .cipher-board {
   grid-template-columns: repeat(5, 1fr);
+  max-width: 100%;
+  width: 100%;
+  justify-content: center;
 }
 .cipher-board .board-cell {
-  width: 70px;
-  height: 70px;
+  width: clamp(40px, 15vw, 70px);
+  height: clamp(40px, 15vw, 70px);
 }
 .symbol-display {
-  font-size: 2rem;
+  font-size: clamp(1.2rem, 5vw, 2rem);
   z-index: 1;
 }
 .board-cell.cipher-inspected {
