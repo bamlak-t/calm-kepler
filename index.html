@@ -83,11 +83,14 @@
       <div class="game-layout" id="sleuths-game" style="display: none;">
         <aside class="game-sidebar">
           <div class="game-controls-card">
-            <div class="turn-indicator" id="sleuths-turn">Player 1's Turn</div>
-            <div class="phase-indicator" id="sleuths-phase">Select a piece</div>
-            <div class="action-buttons">
-              <button class="btn btn-outline" id="sleuths-accuse">Accuse Selection</button>
-              <button class="btn btn-outline" id="sleuths-new-game">New Game</button>
+            <div class="game-header">
+              <h2 id="sleuths-turn">Player 1's Turn</h2>
+              <span id="sleuths-phase" class="badge">Select a piece</span>
+            </div>
+            <div class="action-buttons" style="flex-direction: column; gap: 8px;">
+              <button class="btn btn-primary" id="sleuths-accuse" style="width: 100%;">Accuse Selection</button>
+              <button class="btn btn-outline" id="sleuths-new-game" style="width: 100%;">New Game</button>
+              <button class="btn btn-outline" id="sleuths-rules-trigger" style="width: 100%;">How to Play</button>
             </div>
             <div class="move-legend" id="sleuths-legend"></div>
           </div>

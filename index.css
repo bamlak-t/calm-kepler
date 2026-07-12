@@ -245,6 +245,47 @@ input:checked + .slider:before {
   }
 }
 
+.move-legend {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  background: var(--bg-hover);
+  padding: 4px 8px;
+  border-radius: var(--radius);
+}
+.legend-accordion summary {
+  cursor: pointer;
+  font-weight: bold;
+  list-style: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.legend-accordion summary h4 { margin: 0; }
+.legend-accordion summary::after {
+  content: '▼';
+  font-size: 0.8rem;
+}
+.legend-accordion[open] summary::after {
+  content: '▲';
+}
+.legend-accordion summary::-webkit-details-marker {
+  display: none;
+}
+.legend-content {
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .game-sidebar {
   display: flex;
   flex-direction: column;

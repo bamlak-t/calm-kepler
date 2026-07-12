@@ -86,7 +86,7 @@ export function showHotseat(message, onReady) {
 export function showAlert(title, message) {
   const modal = document.getElementById('alert-modal');
   document.getElementById('alert-title').textContent = title;
-  document.getElementById('alert-msg').textContent = message;
+  document.getElementById('alert-msg').innerHTML = message;
   modal.style.display = 'flex';
   
   const btn = document.getElementById('alert-close');

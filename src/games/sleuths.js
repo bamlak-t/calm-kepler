@@ -21,7 +21,7 @@ function shuffle(arr) {
 
 function rand(n) { return Math.floor(Math.random() * n); }
 
-function getMoveTargets(moveType, r, c, size) {
+function getMoveTargets(moveType, r, c, size, hasPiece) {
   const targets = [];
   const inBounds = (rr, cc) => rr >= 0 && rr < size && cc >= 0 && cc < size;
 
@@ -31,16 +31,18 @@ function getMoveTargets(moveType, r, c, size) {
       if (inBounds(r + dr, c + dc)) targets.push([r + dr, c + dc]);
     }
   } else if (moveType === 'Rook') {
-    for (let i = Math.max(0, c - 3); i <= Math.min(size - 1, c + 3); i++) {
-      if (i !== c) targets.push([r, i]);
-    }
-    for (let i = Math.max(0, r - 3); i <= Math.min(size - 1, r + 3); i++) {
-      if (i !== r) targets.push([i, c]);
-    }
+    for(let i=r-1; i>=Math.max(0, r-3); i--) { targets.push([i, c]); if(hasPiece(i,c)) break; }
+    for(let i=r+1; i<=Math.min(size-1, r+3); i++) { targets.push([i, c]); if(hasPiece(i,c)) break; }
+    for(let i=c-1; i>=Math.max(0, c-3); i--) { targets.push([r, i]); if(hasPiece(r,i)) break; }
+    for(let i=c+1; i<=Math.min(size-1, c+3); i++) { targets.push([r, i]); if(hasPiece(r,i)) break; }
   } else if (moveType === 'Bishop') {
     for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
       let nr = r + dr, nc = c + dc, dist = 1;
-      while (inBounds(nr, nc) && dist <= 3) { targets.push([nr, nc]); nr += dr; nc += dc; dist++; }
+      while (inBounds(nr, nc) && dist <= 3) { 
+        targets.push([nr, nc]); 
+        if (hasPiece(nr, nc)) break;
+        nr += dr; nc += dc; dist++; 
+      }
     }
   } else if (moveType === 'King') {
     for (let dr = -1; dr <= 1; dr++) {
@@ -50,15 +52,17 @@ function getMoveTargets(moveType, r, c, size) {
       }
     }
   } else if (moveType === 'Queen') {
-    for (let i = Math.max(0, c - 3); i <= Math.min(size - 1, c + 3); i++) {
-      if (i !== c) targets.push([r, i]);
-    }
-    for (let i = Math.max(0, r - 3); i <= Math.min(size - 1, r + 3); i++) {
-      if (i !== r) targets.push([i, c]);
-    }
+    for(let i=r-1; i>=Math.max(0, r-3); i--) { targets.push([i, c]); if(hasPiece(i,c)) break; }
+    for(let i=r+1; i<=Math.min(size-1, r+3); i++) { targets.push([i, c]); if(hasPiece(i,c)) break; }
+    for(let i=c-1; i>=Math.max(0, c-3); i--) { targets.push([r, i]); if(hasPiece(r,i)) break; }
+    for(let i=c+1; i<=Math.min(size-1, c+3); i++) { targets.push([r, i]); if(hasPiece(r,i)) break; }
     for (const [dr, dc] of [[-1,-1],[-1,1],[1,-1],[1,1]]) {
       let nr = r + dr, nc = c + dc, dist = 1;
-      while (inBounds(nr, nc) && dist <= 3) { targets.push([nr, nc]); nr += dr; nc += dc; dist++; }
+      while (inBounds(nr, nc) && dist <= 3) { 
+        targets.push([nr, nc]); 
+        if (hasPiece(nr, nc)) break;
+        nr += dr; nc += dc; dist++; 
+      }
     }
   }
   return targets;
@@ -102,6 +106,32 @@ export class SleuthsGame {
     
     const accuseBtn = document.getElementById('sleuths-accuse');
     accuseBtn.addEventListener('click', () => this.handleAccuseClick());
+
+    document.getElementById('sleuths-rules-trigger').addEventListener('click', () => this.showHowToPlay());
+  }
+
+  showHowToPlay() {
+    const html = `
+      <div style="text-align: left; font-size: 0.9rem;">
+        <p><strong>Goal:</strong> Find the Mastermind by moving pieces onto symbol tiles to gather clues.</p>
+        <p><strong>Tiles:</strong> The outer border is empty. The center "Clue Zone" has tiles with symbols:</p>
+        <ul style="margin-left: 20px;">
+          <li><strong>○ Circle:</strong> Confirms the Mastermind's exact Color or Shape.</li>
+          <li><strong>□ Square:</strong> Shows how close the Mastermind is (e.g., within 2 tiles).</li>
+          <li><strong>△ Triangle:</strong> Gives a direction (e.g., North or East).</li>
+        </ul>
+        <p><strong>Pieces:</strong> Pieces move like chess pieces and block each other (except Knights, which jump). Rooks, Bishops, and Queens can move up to 3 spaces.</p>
+        <p><strong>Abilities:</strong> If enabled, pieces gain hidden roles:</p>
+        <ul style="margin-left: 20px;">
+          <li><strong>Analyst:</strong> Gets 2 clues instead of 1.</li>
+          <li><strong>Scout:</strong> Can find clues even on empty border tiles.</li>
+          <li><strong>Detective:</strong> Can find new clues on already-investigated tiles.</li>
+          <li><strong>Inspector:</strong> Automatically burns all adjacent tiles when landing.</li>
+          <li><strong>Profiler:</strong> Automatically alerts you if they land on the Mastermind's color.</li>
+        </ul>
+      </div>
+    `;
+    showAlert('How to Play Sleuths', html);
   }
 
   startFromSetup() {
@@ -227,14 +257,27 @@ export class SleuthsGame {
   }
 
   renderLegend() {
-    this.legendEl.innerHTML = '<h4>Your Team</h4>';
+    this.legendEl.innerHTML = '';
+    const details = document.createElement('details');
+    details.className = 'legend-accordion';
+    
+    const summary = document.createElement('summary');
+    summary.innerHTML = '<h4>Your Team</h4>';
+    details.appendChild(summary);
+    
+    const content = document.createElement('div');
+    content.className = 'legend-content';
+
     Object.entries(this.moveAssign[this.currentPlayer]).forEach(([piece, move]) => {
       const el = document.createElement('div');
       el.className = 'legend-item';
       let displayName = (this.camoMode || this.abilitiesOn) ? piece : piece.split(' ')[0];
       el.textContent = `${displayName}: ${MOVE_ICONS[move]} ${move}`;
-      this.legendEl.appendChild(el);
+      content.appendChild(el);
     });
+
+    details.appendChild(content);
+    this.legendEl.appendChild(details);
   }
 
   renderBoard() {
@@ -347,7 +390,8 @@ export class SleuthsGame {
   }
 
   getFilteredMoves(moveType, r, c) {
-    const rawTargets = getMoveTargets(moveType, r, c, this.size);
+    const hasPiece = (rr, cc) => this.pieces[1].some(p => p.r === rr && p.c === cc) || this.pieces[2].some(p => p.r === rr && p.c === cc);
+    const rawTargets = getMoveTargets(moveType, r, c, this.size, hasPiece);
     return rawTargets.filter(([tr, tc]) =>
       !this.pieces[this.currentPlayer].some(p => p.r === tr && p.c === tc)
     );
