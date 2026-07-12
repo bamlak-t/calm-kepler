@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Vault — Deduction Games</title>
-  <meta name="description" content="Two-player deduction games: Sleuths and Cipher Duel." />
+  <meta name="description" content="Two-player deduction games: Seekers and Cipher Duel." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
@@ -27,7 +27,7 @@
   <!-- Tab Navigation -->
   <nav class="game-nav" role="tablist">
     <button class="nav-tab active" id="tab-sleuths" role="tab" aria-selected="true" aria-controls="panel-sleuths" data-game="sleuths">
-      <span class="tab-name">Sleuths</span>
+      <span class="tab-name">Seekers</span>
     </button>
     <button class="nav-tab" id="tab-cipher" role="tab" aria-selected="false" aria-controls="panel-cipher" data-game="cipher">
       <span class="tab-name">Cipher Duel</span>
@@ -40,9 +40,9 @@
     <!-- Panel 1: Sleuths -->
     <section class="game-panel active" id="panel-sleuths" role="tabpanel" aria-labelledby="tab-sleuths">
       
-      <!-- Sleuths Setup Screen -->
+      <!-- Setup Screen -->
       <div class="setup-container" id="sleuths-setup">
-        <h2>Sleuths Setup</h2>
+        <h2>Seekers Setup</h2>
         <div class="setup-form">
           <div class="form-group">
             <label for="sleuths-board-size">Board Size:</label>
@@ -55,10 +55,9 @@
           <div class="form-group">
             <label for="sleuths-piece-count">Pieces per Player:</label>
             <select id="sleuths-piece-count" class="form-select">
-              <option value="3">3 Pieces (Standard)</option>
+              <option value="3">3 Pieces</option>
+              <option value="6">6 Pieces</option>
               <option value="row" selected>Full Row</option>
-              <option value="5">5 Pieces</option>
-              <option value="8">8 Pieces</option>
             </select>
           </div>
           <div class="form-group toggle-group">
@@ -192,13 +191,13 @@
     <div class="modal-card">
       <h2>How to Play</h2>
       <div class="rules-tabs">
-        <button class="rules-tab-btn active" data-rules-tab="rules-sleuths">Sleuths</button>
+        <button class="rules-tab-btn active" data-rules-tab="rules-sleuths">Seekers</button>
         <button class="rules-tab-btn" data-rules-tab="rules-cipher">Cipher Duel</button>
       </div>
 
       <div class="rules-content">
         <div class="rules-panel active" id="rules-sleuths">
-          <h3>Sleuths</h3>
+          <h3>Seekers</h3>
           <p><strong>Goal:</strong> Navigate your pieces to deduce and occupy the hidden Mastermind tile.</p>
           <ul>
             <li><strong>Movement:</strong> Your pieces move like Chess pieces. Click a piece, then click a valid destination.</li>
@@ -232,6 +231,6 @@
     </div>
   </div>
 
-  <script src="src/app.js" type="module"></script>
+  <script src="src/app.js?v=3" type="module"></script>
 </body>
 </html>

@@ -1,13 +1,12 @@
 // src/games/sleuths.js — Funny Sleuths
 
-import { showVictory, showHotseat, showAlert } from '../app.js';
+import { showVictory, showHotseat, showAlert } from '../utils.js';
 
 const MOVE_ICONS  = { Knight: '♞', Rook: '♜', Bishop: '♝', King: '♚', Queen: '♛' };
 const MOVE_NAMES  = ['Knight', 'Rook', 'Bishop', 'King', 'Queen'];
 
 const COLORS = ['red', 'blue', 'green'];
 const SYMBOLS = ['△', '□', '○'];
-const PIECE_NAMES = ['Detective', 'Analyst', 'Scout', 'Inspector', 'Agent', 'Profiler', 'Chief', 'Officer', 'Rookie', 'Specialist'];
 const CLASSIC_ICONS = { 'Knight': '♞', 'Rook': '♜', 'Bishop': '♝', 'King': '♚', 'Queen': '♛' };
 
 function shuffle(arr) {
@@ -81,9 +80,10 @@ export class SleuthsGame {
     this.investigated = new Set();
     this.clues = { 1: [], 2: [] };
     this.pieces = { 1: [], 2: [] };
-    this.moveAssign = { 1: {}, 2: {} };
     this.boardData = [];
     this.phase = 'select'; // 'select' | 'move'
+    this.config = null;
+    this.pieceCountType = 'row';
     
     this.initDom();
   }
@@ -113,34 +113,36 @@ export class SleuthsGame {
   showHowToPlay() {
     const html = `
       <div style="text-align: left; font-size: 0.9rem;">
-        <p><strong>Goal:</strong> Find the Mastermind by moving pieces onto symbol tiles to gather clues.</p>
-        <p><strong>Tiles:</strong> The outer border is empty. The center "Clue Zone" has tiles with symbols:</p>
-        <ul style="margin-left: 20px;">
+        <p style="margin-bottom: 4px;"><strong>Goal:</strong> Find the Mastermind by moving pieces onto symbol tiles to gather clues.</p>
+        
+        <p style="margin-top: 12px; margin-bottom: 4px;"><strong>Tiles:</strong> The outer border is empty. The center "Clue Zone" has tiles with symbols:</p>
+        <ul style="margin-top: 0; margin-left: 20px; margin-bottom: 0;">
           <li><strong>○ Circle:</strong> Confirms the Mastermind's exact Color or Shape.</li>
           <li><strong>□ Square:</strong> Shows how close the Mastermind is (e.g., within 2 tiles).</li>
           <li><strong>△ Triangle:</strong> Gives a direction (e.g., North or East).</li>
         </ul>
-        <p><strong>Pieces:</strong> Pieces move like chess pieces and block each other (except Knights, which jump). Rooks, Bishops, and Queens can move up to 3 spaces.</p>
-        <p><strong>Abilities:</strong> If enabled, pieces gain hidden roles:</p>
-        <ul style="margin-left: 20px;">
+        
+        <p style="margin-top: 12px; margin-bottom: 4px;"><strong>Pieces:</strong> Pieces move like chess pieces and block each other (except Knights, which jump). Rooks, Bishops, and Queens can move up to 3 spaces.</p>
+        
+        <p style="margin-top: 12px; margin-bottom: 4px;"><strong>Abilities:</strong> If enabled, pieces gain hidden roles:</p>
+        <ul style="margin-top: 0; margin-left: 20px; margin-bottom: 0;">
           <li><strong>Analyst:</strong> Gets 2 clues instead of 1.</li>
           <li><strong>Scout:</strong> Can find clues even on empty border tiles.</li>
-          <li><strong>Detective:</strong> Can find new clues on already-investigated tiles.</li>
-          <li><strong>Inspector:</strong> Automatically burns all adjacent tiles when landing.</li>
-          <li><strong>Profiler:</strong> Automatically alerts you if they land on the Mastermind's color.</li>
+          <li><strong>Profiler:</strong> Automatically alerts you if they can move directly to the Mastermind from their new spot.</li>
         </ul>
       </div>
     `;
-    showAlert('How to Play Sleuths', html);
+    showAlert('How to Play Seekers', html);
   }
 
-  startFromSetup() {
+  async startFromSetup() {
     const sizeVal = parseInt(document.getElementById('sleuths-board-size').value);
     const countVal = document.getElementById('sleuths-piece-count').value;
     const camoVal = document.getElementById('sleuths-camo-mode').checked;
     const abilitiesVal = document.getElementById('sleuths-abilities').checked;
     
     this.size = sizeVal;
+    this.pieceCountType = countVal;
     if (countVal === 'row') {
       this.pieceCount = this.size;
     } else {
@@ -148,6 +150,14 @@ export class SleuthsGame {
     }
     this.camoMode = camoVal;
     this.abilitiesOn = abilitiesVal;
+
+    try {
+      const res = await fetch('src/games/seekers-config.json');
+      this.config = await res.json();
+    } catch (e) {
+      console.error(e);
+      this.config = null;
+    }
 
     this.setupContainer.style.display = 'none';
     this.gameContainer.style.display = 'grid';
@@ -163,7 +173,6 @@ export class SleuthsGame {
     this.phase = 'select';
     this.boardData = [];
     this.pieces = { 1: [], 2: [] };
-    this.moveAssign = { 1: {}, 2: {} };
 
     // Generate board: margin of 1 gives empty border tiles
     for (let r = 0; r < this.size; r++) {
@@ -183,36 +192,39 @@ export class SleuthsGame {
     console.log(`[TESTING] Mastermind is located at row ${this.mastermindPos[0]}, col ${this.mastermindPos[1]}`);
 
     // Assign Names and Moves
-    let names1 = [];
-    let names2 = [];
-    
-    if (this.camoMode || this.abilitiesOn) {
-      names1 = shuffle(PIECE_NAMES).slice(0, this.pieceCount);
-      names2 = shuffle(PIECE_NAMES).slice(0, this.pieceCount);
-      for (let i = 0; i < this.pieceCount; i++) {
-        this.moveAssign[1][names1[i]] = MOVE_NAMES[rand(MOVE_NAMES.length)];
-        this.moveAssign[2][names2[i]] = MOVE_NAMES[rand(MOVE_NAMES.length)];
+    const getRoleList = () => {
+      let roles = [];
+      if ((this.camoMode || this.abilitiesOn) && this.config) {
+        const sz = this.size.toString();
+        const pCt = this.pieceCountType;
+        const conf = (this.config[sz] && this.config[sz][pCt]) ? this.config[sz][pCt] : null;
+        if (conf) {
+          for(let i=0; i<conf.Analyst; i++) roles.push('Analyst');
+          for(let i=0; i<conf.Scout; i++) roles.push('Scout');
+          for(let i=0; i<conf.Profiler; i++) roles.push('Profiler');
+          while(roles.length < this.pieceCount) roles.push('Agent');
+          return shuffle(roles);
+        }
       }
-    } else {
-      for (let i = 0; i < this.pieceCount; i++) {
-        const m1 = MOVE_NAMES[rand(MOVE_NAMES.length)];
-        const m2 = MOVE_NAMES[rand(MOVE_NAMES.length)];
-        names1.push(`${m1} ${i+1}`);
-        names2.push(`${m2} ${i+1}`);
-        this.moveAssign[1][names1[i]] = m1;
-        this.moveAssign[2][names2[i]] = m2;
-      }
-    }
+      roles = ['Analyst', 'Scout', 'Profiler'];
+      while (roles.length < this.pieceCount) roles.push('Agent');
+      return shuffle(roles).slice(0, this.pieceCount);
+    };
+
+    let roles1 = getRoleList();
+    let roles2 = getRoleList();
 
     // Place Pieces
     for (let i = 0; i < this.pieceCount; i++) {
       const r1 = Math.floor(i / this.size);
       const c1 = i % this.size;
-      this.pieces[1].push({ name: names1[i], r: r1, c: c1, player: 1 });
+      const m1 = MOVE_NAMES[rand(MOVE_NAMES.length)];
+      this.pieces[1].push({ name: (this.camoMode || this.abilitiesOn) ? roles1[i] : 'Piece', moveType: m1, r: r1, c: c1, player: 1 });
 
       const r2 = (this.size - 1) - Math.floor(i / this.size);
       const c2 = i % this.size;
-      this.pieces[2].push({ name: names2[i], r: r2, c: c2, player: 2 });
+      const m2 = MOVE_NAMES[rand(MOVE_NAMES.length)];
+      this.pieces[2].push({ name: (this.camoMode || this.abilitiesOn) ? roles2[i] : 'Piece', moveType: m2, r: r2, c: c2, player: 2 });
     }
 
     this.renderBoard();
@@ -268,11 +280,18 @@ export class SleuthsGame {
     const content = document.createElement('div');
     content.className = 'legend-content';
 
-    Object.entries(this.moveAssign[this.currentPlayer]).forEach(([piece, move]) => {
+    const legendItems = {};
+    this.pieces[this.currentPlayer].forEach(piece => {
+      const key = `${piece.name}-${piece.moveType}`;
+      if (!legendItems[key]) legendItems[key] = { name: piece.name, move: piece.moveType, count: 1 };
+      else legendItems[key].count++;
+    });
+
+    Object.values(legendItems).forEach(item => {
       const el = document.createElement('div');
       el.className = 'legend-item';
-      let displayName = (this.camoMode || this.abilitiesOn) ? piece : piece.split(' ')[0];
-      el.textContent = `${displayName}: ${MOVE_ICONS[move]} ${move}`;
+      const label = item.count > 1 ? `${item.name} (x${item.count})` : item.name;
+      el.textContent = `${label}: ${MOVE_ICONS[item.move]} ${item.move}`;
       content.appendChild(el);
     });
 
@@ -318,7 +337,7 @@ export class SleuthsGame {
           cell.classList.add(piece.player === 1 ? 'p1-piece' : 'p2-piece');
           const icon = document.createElement('div');
           icon.className = 'piece-icon';
-          const moveType = this.moveAssign[piece.player][piece.name];
+          const moveType = piece.moveType;
           icon.textContent = this.camoMode ? CLASSIC_ICONS[MOVE_NAMES[rand(MOVE_NAMES.length)]] : CLASSIC_ICONS[moveType]; // Random classic icon if camo
           if (this.camoMode && piece.icon) {
             icon.textContent = piece.icon; // reuse the assigned fake icon
@@ -359,7 +378,7 @@ export class SleuthsGame {
           this.validMoves = [];
         } else {
           this.selectedPiece = piece;
-          const moveType = this.moveAssign[this.currentPlayer][piece.name];
+          const moveType = piece.moveType;
           this.validMoves = this.getFilteredMoves(moveType, r, c);
           this.phase = 'move';
         }
@@ -373,7 +392,7 @@ export class SleuthsGame {
         const piece = this.pieces[this.currentPlayer].find(p => p.r === r && p.c === c);
         if (piece) {
           this.selectedPiece = piece;
-          const moveType = this.moveAssign[this.currentPlayer][piece.name];
+          const moveType = piece.moveType;
           this.validMoves = this.getFilteredMoves(moveType, r, c);
           this.phase = 'move';
           this.renderBoard();
@@ -477,8 +496,7 @@ export class SleuthsGame {
     piece.c = toC;
     
     // Core investigation
-    const ignoreUsed = this.abilitiesOn && piece.name === 'Detective';
-    this.processInvestigation(piece, toR, toC, ignoreUsed);
+    this.processInvestigation(piece, toR, toC, false);
 
     // Passive Abilities
     if (this.abilitiesOn) {
@@ -486,21 +504,14 @@ export class SleuthsGame {
         this.addLog(`Analyst extracts a second clue:`, this.currentPlayer);
         this.processInvestigation(piece, toR, toC, true); // force second clue
       }
-      if (piece.name === 'Profiler' && this.boardData[toR][toC].color === this.boardData[this.mastermindPos[0]][this.mastermindPos[1]].color) {
-        showAlert('Profiler Instinct', `The Profiler feels a strong presence... The Mastermind is on a ${this.boardData[toR][toC].color} tile!`);
-        this.addLog(`Profiler detected the Mastermind's color!`, this.currentPlayer);
-      }
-      if (piece.name === 'Inspector') {
-        for(let dr=-1; dr<=1; dr++){
-          for(let dc=-1; dc<=1; dc++){
-            if(dr===0 && dc===0) continue;
-            let nr = toR+dr, nc = toC+dc;
-            if(nr>=0 && nr<this.size && nc>=0 && nc<this.size) {
-              this.investigated.add(`${nr},${nc}`);
-            }
-          }
+      if (piece.name === 'Profiler') {
+        const moveType = piece.moveType;
+        const reachable = this.getFilteredMoves(moveType, toR, toC);
+        const canReachMastermind = reachable.some(([r, c]) => r === this.mastermindPos[0] && c === this.mastermindPos[1]);
+        if (canReachMastermind) {
+          showAlert('Profiler Instinct', `The Profiler feels a strong presence... The Mastermind is within reach of this spot!`);
+          this.addLog(`Profiler detected the Mastermind is within reach!`, this.currentPlayer);
         }
-        this.addLog(`Inspector burned all adjacent tiles.`, this.currentPlayer);
       }
     }
 

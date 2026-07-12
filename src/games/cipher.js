@@ -1,6 +1,6 @@
 // src/games/cipher.js — Cipher Duel
 
-import { showVictory, showHotseat } from '../app.js';
+import { showVictory, showHotseat } from '../utils.js';
 
 function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;

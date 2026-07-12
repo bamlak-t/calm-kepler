@@ -1,0 +1,17 @@
+{
+  "6": {
+    "3": { "Analyst": 1, "Scout": 1, "Profiler": 0 },
+    "6": { "Analyst": 1, "Scout": 1, "Profiler": 1 },
+    "row": { "Analyst": 1, "Scout": 2, "Profiler": 1 }
+  },
+  "8": {
+    "3": { "Analyst": 1, "Scout": 1, "Profiler": 0 },
+    "6": { "Analyst": 1, "Scout": 2, "Profiler": 1 },
+    "row": { "Analyst": 2, "Scout": 2, "Profiler": 1 }
+  },
+  "10": {
+    "3": { "Analyst": 1, "Scout": 1, "Profiler": 0 },
+    "6": { "Analyst": 1, "Scout": 2, "Profiler": 1 },
+    "row": { "Analyst": 2, "Scout": 3, "Profiler": 2 }
+  }
+}
