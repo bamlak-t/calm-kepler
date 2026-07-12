@@ -166,6 +166,11 @@ body {
   width: 100%;
   gap: 8px;
 }
+.form-group.toggle-group {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
 .form-group label {
   font-weight: 600;
   font-size: 0.9rem;
@@ -183,6 +188,48 @@ body {
 }
 .form-select:focus {
   border-color: var(--accent-blue);
+}
+
+/* Toggle Switch CSS */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border-light);
+  transition: .4s;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 16px;
+  width: 16px;
+  left: 4px;
+  bottom: 4px;
+  background-color: var(--primary-text);
+  transition: .4s;
+}
+input:checked + .slider {
+  background-color: var(--accent-blue);
+}
+input:checked + .slider:before {
+  transform: translateX(24px);
+}
+.slider.round {
+  border-radius: 24px;
+}
+.slider.round:before {
+  border-radius: 50%;
 }
 
 /* Sidebar & Board Layout */
@@ -390,13 +437,17 @@ body {
   top: 4px; right: 4px;
   font-size: 1.2rem;
   pointer-events: none;
-  transition: transform 0.8s ease-in-out;
+  transition: opacity 0.4s ease, transform 0.8s ease-in-out;
   /* Add text stroke for outline effect */
   -webkit-text-stroke: 1px currentColor;
   text-stroke: 1px currentColor;
 }
 .board-wrapper.rotated-180 .cell-symbol {
   transform: rotate(-180deg);
+}
+
+.board-cell.investigated .cell-symbol {
+  opacity: 0 !important;
 }
 
 /* Pieces */

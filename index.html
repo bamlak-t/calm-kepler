@@ -61,12 +61,19 @@
               <option value="8">8 Pieces</option>
             </select>
           </div>
-          <div class="form-group">
+          <div class="form-group toggle-group">
             <label for="sleuths-camo-mode">Piece Camouflage:</label>
-            <select id="sleuths-camo-mode" class="form-select">
-              <option value="on" selected>ON (Hidden Roles & Abilities)</option>
-              <option value="off">OFF (Classic Chess Pieces)</option>
-            </select>
+            <label class="switch">
+              <input type="checkbox" id="sleuths-camo-mode">
+              <span class="slider round"></span>
+            </label>
+          </div>
+          <div class="form-group toggle-group">
+            <label for="sleuths-abilities">Piece Abilities:</label>
+            <label class="switch">
+              <input type="checkbox" id="sleuths-abilities">
+              <span class="slider round"></span>
+            </label>
           </div>
           <button class="btn btn-primary" id="sleuths-start-btn">Start Game</button>
         </div>
