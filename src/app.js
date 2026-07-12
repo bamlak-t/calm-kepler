@@ -1,8 +1,15 @@
 // src/app.js — Main application orchestrator
+
 import { SleuthsGame } from './games/sleuths.js';
-import { EvidenceGame } from './games/evidence.js';
 import { CipherGame } from './games/cipher.js';
-import { WhispersGame } from './games/whispers.js';
+
+// ---------- Theme Toggle ----------
+const themeBtn = document.getElementById('theme-toggle');
+themeBtn.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+  const isDark = document.body.classList.contains('dark-mode');
+  themeBtn.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+});
 
 // ---------- Tab Navigation ----------
 const tabs = document.querySelectorAll('.nav-tab');
@@ -15,105 +22,81 @@ function switchTab(gameName) {
     t.setAttribute('aria-selected', active);
   });
   panels.forEach(p => {
-    p.classList.toggle('active', p.id === `panel-${gameName}`);
+    const active = p.id === `panel-${gameName}`;
+    p.classList.toggle('active', active);
   });
 }
 
 tabs.forEach(tab => {
-  tab.addEventListener('click', () => switchTab(tab.dataset.game));
-});
-
-// ---------- Rules Modal ----------
-const rulesTrigger = document.getElementById('rules-trigger');
-const rulesModal = document.getElementById('rules-modal');
-const rulesClose = document.getElementById('rules-close');
-const rulesTabBtns = document.querySelectorAll('.rules-tab-btn');
-const rulesPanels = document.querySelectorAll('.rules-panel');
-
-rulesTrigger.addEventListener('click', () => {
-  rulesModal.style.display = 'flex';
-});
-
-rulesClose.addEventListener('click', () => {
-  rulesModal.style.display = 'none';
-});
-
-rulesTabBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    rulesTabBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    const targetTabId = btn.dataset.rulesTab;
-    rulesPanels.forEach(panel => {
-      panel.classList.toggle('active', panel.id === targetTabId);
-    });
+  tab.addEventListener('click', () => {
+    if (!tab.disabled) switchTab(tab.dataset.game);
   });
 });
 
-// ---------- Shared Utilities ----------
-export function showVictory(playerName, subMsg, onPlayAgain) {
-  const overlay = document.getElementById('victory-screen');
-  document.getElementById('victory-title').textContent = `${playerName} Wins!`;
-  document.getElementById('victory-sub').textContent = subMsg || 'The case is closed.';
-  overlay.style.display = 'flex';
-  spawnParticles();
+// ---------- Rules Modal ----------
+const rulesModal = document.getElementById('rules-modal');
+document.getElementById('rules-trigger').addEventListener('click', () => {
+  rulesModal.style.display = 'flex';
+});
+document.getElementById('rules-close').addEventListener('click', () => {
+  rulesModal.style.display = 'none';
+});
 
+const rulesTabs = document.querySelectorAll('.rules-tab-btn');
+const rulesPanels = document.querySelectorAll('.rules-panel');
+rulesTabs.forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.rulesTab;
+    rulesTabs.forEach(t => t.classList.toggle('active', t === tab));
+    rulesPanels.forEach(p => p.classList.toggle('active', p.id === target));
+  });
+});
+
+// ---------- Global Utilities for Games ----------
+export function showVictory(title, message, onPlayAgain) {
+  const modal = document.getElementById('victory-screen');
+  document.getElementById('victory-title').textContent = title;
+  document.getElementById('victory-sub').textContent = message;
+  modal.style.display = 'flex';
+  
   const btn = document.getElementById('victory-play-again');
-  const handler = () => {
-    overlay.style.display = 'none';
-    btn.removeEventListener('click', handler);
-    onPlayAgain?.();
-  };
-  btn.addEventListener('click', handler);
+  // clear old listeners
+  const newBtn = btn.cloneNode(true);
+  btn.replaceWith(newBtn);
+  newBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+    if (onPlayAgain) onPlayAgain();
+  });
 }
 
-export function showHotseat(msg, onReady) {
-  const overlay = document.getElementById('hotseat-screen');
-  document.getElementById('hotseat-msg').textContent = msg;
-  overlay.style.display = 'flex';
-
+export function showHotseat(message, onReady) {
+  const modal = document.getElementById('hotseat-screen');
+  document.getElementById('hotseat-msg').textContent = message;
+  modal.style.display = 'flex';
+  
   const btn = document.getElementById('hotseat-ready');
-  const handler = () => {
-    overlay.style.display = 'none';
-    btn.removeEventListener('click', handler);
-    onReady?.();
-  };
-  btn.addEventListener('click', handler);
+  const newBtn = btn.cloneNode(true);
+  btn.replaceWith(newBtn);
+  newBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+    if (onReady) onReady();
+  });
 }
 
-function spawnParticles() {
-  const container = document.getElementById('victory-particles');
-  container.innerHTML = '';
-  const colors = ['#00e5ff', '#b040ff', '#ffa726', '#00e676', '#ff3d57'];
-  for (let i = 0; i < 60; i++) {
-    const p = document.createElement('div');
-    const color = colors[Math.floor(Math.random() * colors.length)];
-    const size = 6 + Math.random() * 8;
-    p.style.cssText = `
-      position:absolute;
-      width:${size}px; height:${size}px;
-      border-radius:50%;
-      background:${color};
-      left:${Math.random()*100}%;
-      top:${Math.random()*100}%;
-      animation: particle-drift ${0.8+Math.random()*1.5}s ease-out forwards;
-      opacity: 0.9;
-      box-shadow: 0 0 6px ${color};
-    `;
-    container.appendChild(p);
-  }
-  const style = document.getElementById('particle-style') || document.createElement('style');
-  style.id = 'particle-style';
-  style.textContent = `
-    @keyframes particle-drift {
-      from { transform: translateY(0) rotate(0deg); opacity:0.9; }
-      to   { transform: translateY(-80px) rotate(360deg); opacity:0; }
-    }
-  `;
-  document.head.appendChild(style);
+export function showAlert(title, message) {
+  const modal = document.getElementById('alert-modal');
+  document.getElementById('alert-title').textContent = title;
+  document.getElementById('alert-msg').textContent = message;
+  modal.style.display = 'flex';
+  
+  const btn = document.getElementById('alert-close');
+  const newBtn = btn.cloneNode(true);
+  btn.replaceWith(newBtn);
+  newBtn.addEventListener('click', () => {
+    modal.style.display = 'none';
+  });
 }
 
 // ---------- Init Games ----------
 new SleuthsGame();
-new EvidenceGame();
 new CipherGame();
-new WhispersGame();

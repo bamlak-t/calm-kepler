@@ -1,57 +1,44 @@
-// src/games/cipher.js — Cipher Duel: Code-breaking with randomized symbol constraints
+// src/games/cipher.js — Cipher Duel
 
 import { showVictory, showHotseat } from '../app.js';
-
-function shuffle(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
 
 function rand(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 const SYMBOLS = ['◆', '▲', '●', '★', '⬡'];
-const SYMBOL_NAMES = { '◆': 'Diamond', '▲': 'Triangle', '●': 'Circle', '★': 'Star', '⬡': 'Hex' };
-const SYMBOL_COLORS = {
-  '◆': '#00e5ff', '▲': '#b040ff', '●': '#ffa726', '★': '#00e676', '⬡': '#ff3d57'
-};
+const SYMBOL_NAMES = { '◆': 'Parity', '▲': 'Difference', '●': 'Containment', '★': 'Exact Value', '⬡': 'Aggregate' };
 
-// Generates a random 4-digit code where each digit is 1-9
 function randomCode() {
   return Array.from({ length: 4 }, () => rand(1, 9));
 }
 
-// Given a symbol and the codes, generate a constraint hint
-function generateConstraint(symbol, code) {
-  const idx = Math.floor(Math.random() * 4);
-  const digit = code[idx];
-  const constraints = [
-    () => ({ text: `Digit ${idx+1} is ${digit % 2 === 0 ? 'even' : 'odd'}.`, reveals: null }),
-    () => {
+function generateSpecificConstraint(symbol, code, row, col) {
+  const targetIdx = row < 4 ? row : (col % 4);
+  const targetDigit = code[targetIdx];
+
+  if (symbol === '◆') {
+    return { text: `Digit ${targetIdx + 1} is ${targetDigit % 2 === 0 ? 'Even' : 'Odd'}.`, reveals: null };
+  } else if (symbol === '▲') {
+    let otherIdx = col % 4;
+    if (otherIdx === targetIdx) otherIdx = (otherIdx + 1) % 4;
+    const diff = Math.abs(targetDigit - code[otherIdx]);
+    return { text: `|Digit ${targetIdx + 1} − Digit ${otherIdx + 1}| = ${diff}`, reveals: null };
+  } else if (symbol === '●') {
+    const checkVal = (col * 2 + targetIdx) % 9 + 1;
+    const contains = code.includes(checkVal);
+    return { text: `The number ${checkVal} ${contains ? 'IS' : 'is NOT'} in the code.`, reveals: null };
+  } else if (symbol === '★') {
+    return { text: `Digit ${targetIdx + 1} = ${targetDigit}`, reveals: { position: targetIdx, value: targetDigit } };
+  } else if (symbol === '⬡') {
+    if (col % 2 === 0) {
       const sum = code.reduce((a,b) => a+b, 0);
-      return { text: `Sum of all 4 digits is ${sum}.`, reveals: null };
-    },
-    () => {
-      const max = Math.max(...code);
-      return { text: `Largest digit in the code is ${max}.`, reveals: null };
-    },
-    () => ({ text: `Digit ${idx+1} = ${digit}.`, reveals: { position: idx, value: digit } }),
-    () => {
-      const sorted = [...code].sort((a,b) => a-b);
-      return { text: `Digits in ascending order: ${sorted.join(', ')}.`, reveals: null };
-    },
-    () => {
-      const i = Math.floor(Math.random() * 3);
-      const diff = Math.abs(code[i] - code[i+1]);
-      return { text: `|Digit ${i+1} − Digit ${i+2}| = ${diff}.`, reveals: null };
-    },
-  ];
-  return constraints[Math.floor(Math.random() * constraints.length)]();
+      return { text: `The sum of all digits is ${sum}.`, reveals: null };
+    } else {
+      const uniqueCount = new Set(code).size;
+      return { text: `The code contains ${uniqueCount} unique number(s).`, reveals: null };
+    }
+  }
 }
 
 export class CipherGame {
@@ -59,19 +46,20 @@ export class CipherGame {
     this.currentPlayer = 1;
     this.codes = { 1: null, 2: null };
     this.knownDigits = { 1: [null,null,null,null], 2: [null,null,null,null] };
-    this.constraints = { 1: [], 2: [] };
+    this.constraints = { 1: [], 2: [] }; // Array of constraint text strings to detect duplicates
     this.grid = [];
-    this.inspectedCells = new Set();
-    this.setupPhase = true;
-    this.setupStep = 1; // 1 = P1 sets code, 2 = P2 sets code, 3 = play
+    this.burnedCells = new Set();
+    this.setupStep = 1; // 1 = P1 setup, 2 = P2 setup, 3 = play
+    this.hasInspectedThisTurn = false;
 
     this.initDom();
-    this.startGame();
   }
 
   initDom() {
+    this.setupContainer = document.getElementById('cipher-setup');
+    this.gameContainer  = document.getElementById('cipher-game');
+
     this.turnEl     = document.getElementById('cipher-turn');
-    this.phaseEl    = document.getElementById('cipher-phase');
     this.boardEl    = document.getElementById('cipher-board');
     this.legendEl   = document.getElementById('cipher-legend');
     this.p1Slots    = document.getElementById('cipher-p1-slots');
@@ -80,41 +68,49 @@ export class CipherGame {
     this.crackModal = document.getElementById('cipher-crack-modal');
     this.crackPrompt = document.getElementById('cipher-crack-prompt');
     this.crackInputs = document.getElementById('cipher-crack-inputs');
-    this.setupModal = document.getElementById('cipher-setup-modal');
     this.setupTitle = document.getElementById('cipher-setup-title');
     this.setupInputs = document.getElementById('cipher-setup-inputs');
+    this.endTurnBtn = document.getElementById('cipher-end-turn');
+    this.crackBtn   = document.getElementById('cipher-crack');
 
-    document.getElementById('cipher-new-game').addEventListener('click', () => this.startGame());
-    document.getElementById('cipher-crack').addEventListener('click', () => this.openCrackModal());
+    document.getElementById('cipher-new-game').addEventListener('click', () => {
+      this.gameContainer.style.display = 'none';
+      this.setupContainer.style.display = 'block';
+      this.startSetup();
+    });
+    
+    this.crackBtn.addEventListener('click', () => this.openCrackModal());
     document.getElementById('cipher-confirm-crack').addEventListener('click', () => this.confirmCrack());
     document.getElementById('cipher-cancel-crack').addEventListener('click', () => { this.crackModal.style.display = 'none'; });
     document.getElementById('cipher-confirm-setup').addEventListener('click', () => this.confirmSetup());
+    this.endTurnBtn.addEventListener('click', () => this.endTurn());
+    
+    this.startSetup();
   }
 
-  startGame() {
+  startSetup() {
     this.codes = { 1: null, 2: null };
     this.knownDigits = { 1: [null,null,null,null], 2: [null,null,null,null] };
     this.constraints = { 1: [], 2: [] };
-    this.inspectedCells = new Set();
+    this.burnedCells = new Set();
     this.setupStep = 1;
     this.currentPlayer = 1;
+    this.hasInspectedThisTurn = false;
 
-    // Generate 5x5 grid of random symbols
+    // Generate 5x5 grid
     this.grid = Array.from({ length: 5 }, () =>
-      Array.from({ length: 5 }, () => SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)])
+      Array.from({ length: 5 }, () => {
+        if (Math.random() < 0.08) return '★'; // Only 8% chance for a star
+        const commonSymbols = ['◆', '▲', '●', '⬡'];
+        return commonSymbols[Math.floor(Math.random() * commonSymbols.length)];
+      })
     );
 
-    this.renderBoard();
-    this.renderLegend();
-    this.renderSlots();
-    this.constraintList.innerHTML = '';
-    this.updateUI();
-    this.openSetupModal(1);
+    this.openSetupUI(1);
   }
 
-  openSetupModal(player) {
+  openSetupUI(player) {
     this.setupTitle.textContent = `Player ${player}: Set Your Secret Code`;
-    this.setupModal.style.display = 'flex';
     this.setupInputs.innerHTML = '';
     for (let i = 0; i < 4; i++) {
       const input = document.createElement('input');
@@ -124,12 +120,11 @@ export class CipherGame {
       input.maxLength = 1;
       input.className = 'crack-input';
       input.id = `setup-digit-${i}`;
-      input.placeholder = '?';
+      input.placeholder = '-';
       input.addEventListener('input', () => {
         if (input.value.length > 1) input.value = input.value.slice(-1);
         if (parseInt(input.value) > 9) input.value = '9';
         if (parseInt(input.value) < 1 && input.value !== '') input.value = '1';
-        // Auto advance
         if (input.value && i < 3) document.getElementById(`setup-digit-${i+1}`).focus();
       });
       this.setupInputs.appendChild(input);
@@ -143,25 +138,26 @@ export class CipherGame {
       return isNaN(val) ? null : val;
     });
     if (digits.some(d => d === null || d < 1 || d > 9)) {
-      alert('Please enter 4 digits (1–9) for your secret code.');
+      alert('Please enter exactly 4 digits (1–9).');
       return;
     }
+    
     this.codes[this.setupStep] = digits;
-    this.setupModal.style.display = 'none';
 
     if (this.setupStep === 1) {
-      // Pass to P2
-      showHotseat(
-        'Player 1 code saved! Pass device to Player 2 to set their code.',
-        () => {
-          this.setupStep = 2;
-          this.openSetupModal(2);
-        }
-      );
+      showHotseat('Player 1 code saved! Pass device to Player 2.', () => {
+        this.setupStep = 2;
+        this.openSetupUI(2);
+      });
     } else {
-      // Both codes set — start play
+      this.setupContainer.style.display = 'none';
+      this.gameContainer.style.display = 'grid';
       this.setupStep = 3;
       this.currentPlayer = 1;
+      this.hasInspectedThisTurn = false;
+      this.renderBoard();
+      this.renderLegend();
+      this.renderSlots();
       this.updateUI();
     }
   }
@@ -174,16 +170,15 @@ export class CipherGame {
         cell.className = 'board-cell';
         const sym = this.grid[r][c];
         const key = `${r},${c}`;
-        cell.dataset.coord = `${r},${c}`;
+        
+        cell.dataset.coord = r < 4 ? `R${r+1}(D${r+1})` : `R5(Gbl)`;
 
         const symEl = document.createElement('div');
         symEl.className = 'symbol-display';
         symEl.textContent = sym;
-        symEl.style.color = SYMBOL_COLORS[sym];
-        symEl.style.textShadow = `0 0 12px ${SYMBOL_COLORS[sym]}`;
         cell.appendChild(symEl);
 
-        if (this.inspectedCells.has(key)) {
+        if (this.burnedCells.has(key)) {
           cell.classList.add('cipher-inspected');
         }
 
@@ -195,49 +190,40 @@ export class CipherGame {
 
   handleCellClick(r, c) {
     if (this.setupStep !== 3) return;
+    if (this.hasInspectedThisTurn) return; // Only 1 inspection per turn
+    
     const key = `${r},${c}`;
-    if (this.inspectedCells.has(key)) return; // already inspected
+    if (this.burnedCells.has(key)) return;
 
     const sym = this.grid[r][c];
-    this.inspectedCells.add(key);
+    this.burnedCells.add(key);
+    this.hasInspectedThisTurn = true;
 
-    // Inspect symbol → get constraint about opponent's code
     const opponentCode = this.codes[this.currentPlayer === 1 ? 2 : 1];
-    const constraint = generateConstraint(sym, opponentCode);
+    const constraint = generateSpecificConstraint(sym, opponentCode, r, c);
 
-    this.constraints[this.currentPlayer].push({
-      symbol: sym,
-      text: constraint.text,
-    });
-
-    // If constraint reveals a specific digit
-    if (constraint.reveals) {
-      const { position, value } = constraint.reveals;
-      this.knownDigits[this.currentPlayer][position] = value;
-      this.renderSlots();
-    }
-
-    this.addConstraintChip(`${SYMBOL_NAMES[sym]}: ${constraint.text}`);
-    this.renderBoard();
-
-    // End turn after inspection
-    const next = this.currentPlayer === 1 ? 2 : 1;
-    showHotseat(
-      `Player ${next}'s turn. Pass the device, then press Ready.`,
-      () => {
-        this.currentPlayer = next;
-        this.updateUI();
-        // Re-render constraints for the other player
-        this.constraintList.innerHTML = '';
-        this.constraints[next].forEach(c2 => this.addConstraintChip(`${SYMBOL_NAMES[c2.symbol]}: ${c2.text}`));
+    // Check for duplicate clues for this player
+    const isDuplicate = this.constraints[this.currentPlayer].includes(constraint.text);
+    
+    if (isDuplicate) {
+      this.addConstraintChip(`(Burned Tile) No new clue found here.`);
+    } else {
+      this.constraints[this.currentPlayer].push(constraint.text);
+      if (constraint.reveals) {
+        const { position, value } = constraint.reveals;
+        this.knownDigits[this.currentPlayer][position] = value;
         this.renderSlots();
       }
-    );
+      this.addConstraintChip(`${sym} (R${r+1},C${c+1}): ${constraint.text}`);
+    }
+
+    this.renderBoard();
+    this.updateUI(); // Enable End Turn button
   }
 
   addConstraintChip(text) {
     const chip = document.createElement('div');
-    chip.className = 'constraint-chip';
+    chip.className = 'log-entry';
     chip.textContent = text;
     this.constraintList.prepend(chip);
   }
@@ -261,24 +247,41 @@ export class CipherGame {
     SYMBOLS.forEach(sym => {
       const item = document.createElement('div');
       item.className = 'legend-item';
-      item.style.color = SYMBOL_COLORS[sym];
-      item.innerHTML = `<span>${sym}</span> ${SYMBOL_NAMES[sym]}`;
+      item.innerHTML = `<strong>${sym}</strong> ${SYMBOL_NAMES[sym]}`;
       this.legendEl.appendChild(item);
     });
   }
 
   updateUI() {
     this.turnEl.textContent = `Player ${this.currentPlayer}'s Turn`;
-    this.turnEl.style.borderLeftColor = this.currentPlayer === 1 ? 'var(--cyan)' : 'var(--amber)';
-    this.phaseEl.textContent = this.setupStep !== 3
-      ? 'Setting up secret codes...'
-      : 'Click a symbol tile to inspect it';
+    
+    if (this.hasInspectedThisTurn) {
+      this.endTurnBtn.style.display = 'block';
+    } else {
+      this.endTurnBtn.style.display = 'none';
+    }
+  }
+
+  endTurn() {
+    const next = this.currentPlayer === 1 ? 2 : 1;
+    showHotseat(`Player ${next}'s turn. Pass the device, then press Ready.`, () => {
+      this.currentPlayer = next;
+      this.hasInspectedThisTurn = false;
+      this.updateUI();
+      
+      // Re-render constraints for the new player
+      this.constraintList.innerHTML = '';
+      this.constraints[next].forEach(text => {
+        this.addConstraintChip(text);
+      });
+      this.renderSlots();
+    });
   }
 
   openCrackModal() {
     if (this.setupStep !== 3) return;
     const opponent = this.currentPlayer === 1 ? 2 : 1;
-    this.crackPrompt.textContent = `Enter what you think Player ${opponent}'s 4-digit code is:`;
+    this.crackPrompt.textContent = `Enter Player ${opponent}'s 4-digit code:`;
     this.crackModal.style.display = 'flex';
     this.crackInputs.innerHTML = '';
     for (let i = 0; i < 4; i++) {
@@ -287,7 +290,7 @@ export class CipherGame {
       input.min = 1; input.max = 9;
       input.className = 'crack-input';
       input.id = `crack-digit-${i}`;
-      input.placeholder = '?';
+      input.placeholder = '-';
       input.addEventListener('input', () => {
         if (input.value.length > 1) input.value = input.value.slice(-1);
         if (i < 3 && input.value) document.getElementById(`crack-digit-${i+1}`).focus();
@@ -308,9 +311,17 @@ export class CipherGame {
     this.crackModal.style.display = 'none';
 
     if (actual.every((d, i) => d === attempt[i])) {
-      showVictory(`Player ${this.currentPlayer}`, `Cracked the code: ${actual.join('-')}!`, () => this.startGame());
+      showVictory(`Player ${this.currentPlayer} Wins!`, `Code Cracked: ${actual.join('-')}`, () => {
+        this.gameContainer.style.display = 'none';
+        this.setupContainer.style.display = 'block';
+        this.startSetup();
+      });
     } else {
-      alert(`Wrong! The code was not ${attempt.join('-')}. Keep investigating...`);
+      showVictory(`Player ${opponent} Wins!`, `Player ${this.currentPlayer} triggered the alarm by entering: ${attempt.join('-')}`, () => {
+        this.gameContainer.style.display = 'none';
+        this.setupContainer.style.display = 'block';
+        this.startSetup();
+      });
     }
   }
 }
